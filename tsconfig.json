@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "jsx": "react-jsx",
+        "jsxImportSource": "preact",
+        "sourceMap": false,
+        "strict": true,
+        "noImplicitAny": true,
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    "exclude": ["./node_modules"]
+}

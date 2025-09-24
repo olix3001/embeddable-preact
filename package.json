@@ -1,0 +1,26 @@
+{
+  "name": "embeddable-nano-web",
+  "description": "",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "author": "Oliwier Michalik",
+  "license": "MIT",
+  "packageManager": "pnpm@10.17.1",
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "@types/node": "^24.5.2",
+    "esbuild": "^0.25.10",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vite-live-preview": "^0.4.0"
+  },
+  "dependencies": {
+    "preact": "^10.27.2",
+    "preact-iso": "^2.10.0"
+  }
+}
