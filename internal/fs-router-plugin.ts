@@ -125,6 +125,11 @@ const vitePluginRouter = (options: PluginOptions): Plugin => {
                     continue;
                 }
 
+                const allCssFiles = getAllCssFromManifest(bundle, entryFile.fileName, new Set());
+                const cssLinks = allCssFiles?.map((css: string) =>
+                    `<link rel="stylesheet" href="/${css}">`
+                ).join('\n    ') || '';
+
                 const mainBundlePath = normalizePath(relative(config.root, entryFile.fileName));
 
                 try {
@@ -135,6 +140,7 @@ const vitePluginRouter = (options: PluginOptions): Plugin => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${routePath === '/' ? 'Home' : capitalize(basename(routePath))}</title>
+    ${cssLinks}
   </head>
   <body>
     <div id="app"></div>
@@ -204,4 +210,18 @@ async function getLayoutComponents(dir: string, rootDir: string): Promise<string
     }
 
     return layouts;
+}
+
+function getAllCssFromManifest(bundle: any, entryId: string, cssSet: Set<string> = new Set()) {
+    const entry = bundle[entryId];
+    if (!entry) return;
+
+    entry.viteMetadata.importedCss.forEach((css: string) => cssSet.add(css));
+
+    if (entry.imports) {
+        entry.imports.forEach((importedEntry: string) => {
+            getAllCssFromManifest(bundle, importedEntry, cssSet);
+        });
+    }
+    return Array.from(cssSet);
 }
