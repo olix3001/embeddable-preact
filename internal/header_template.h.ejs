@@ -1,0 +1,47 @@
+#pragma once
+#include <pgmspace.h>
+
+/* 
+---< Metadata >---
+Total size of all assets: <%= meta.totalSize %>
+---< Metadata >---
+*/
+
+namespace static_site {
+    struct file {
+        const char *path;
+        const char *mime;
+        uint32_t size;
+        const uint8_t *data;
+    };
+
+    // Data for every file.
+    <% for(const file of files) { %>
+    const uint32_t f_<%= file.normalizedName %>_size PROGMEM = <%= file.size %>;
+    const uint32_t f_<%= file.normalizedName %>_data PROGMEM = {<%= file.data %>
+    };
+    <% } %>
+
+    // Lists for all resources and routes.
+    const file resources[] PROGMEM = {
+        <% for(let i=0; i<files.length; i++) { %><% if (files[i].type == 'resource') { %>{
+            .path = "<%= files[i].path %>",
+            .mime = "<%= files[i].mimeType %>",
+            .size = f_<%= files[i].normalizedName %>_size,
+            .data = f_<%= files[i].normalizedName %>_data,
+        },<% } %><% } %>
+    };
+
+    const file routes[] PROGMEM = {
+        <% for(let i=0; i<files.length; i++) { %><% if (files[i].type == 'route') { %>{
+            .path = "<%= files[i].path %>",
+            .mime = "<%= files[i].mimeType %>",
+            .size = f_<%= files[i].normalizedName %>_size,
+            .data = f_<%= files[i].normalizedName %>_data,
+        },<% } %><% } %>
+    };
+
+    // Utilities.
+    const uint8_t num_resources = sizeof(resources) / sizeof(const file);
+    const uint8_t num_routes = sizeof(resources) / sizeof(const file);
+}

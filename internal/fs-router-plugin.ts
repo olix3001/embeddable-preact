@@ -10,7 +10,6 @@ interface PluginOptions {
 
 export interface SiteManifest {
     routes: Record<string, string>;
-    assets: Record<string, string>;
 }
 
 const vitePluginRouter = (options: PluginOptions): Plugin => {
@@ -110,7 +109,6 @@ const vitePluginRouter = (options: PluginOptions): Plugin => {
 
             const siteManifest: SiteManifest = {
                 routes: {},
-                assets: {},
             };
             const pages = await findPageRoutes(join(config.root, options.pagesDir), options.pagesDir, []);
 
@@ -155,7 +153,6 @@ const vitePluginRouter = (options: PluginOptions): Plugin => {
                         source: htmlContent
                     });
                     siteManifest.routes[routePath] = outputHtmlName;
-                    siteManifest.assets[mainBundlePath] = entryFile.fileName;
 
                     console.log(`Generated HTML for route: ${routePath}`);
                 } catch (err) {

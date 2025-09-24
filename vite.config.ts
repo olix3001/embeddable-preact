@@ -3,6 +3,7 @@ import vitePluginRouter from './internal/fs-router-plugin';
 import preact from '@preact/preset-vite';
 import preview from 'vite-live-preview';
 import vitePluginStaticPreview from './internal/static-preview-plugin';
+import viteGenerateCHeader from './internal/generate-c-header-plugin';
 
 export default defineConfig({
     plugins: [
@@ -16,11 +17,23 @@ export default defineConfig({
                 plugins: [vitePluginStaticPreview()]
             }
         }),
+        viteGenerateCHeader(),
     ],
     build: {
         outDir: 'dist',
+        modulePreload: {
+            polyfill: false,
+        },
         manifest: true,
-        minify: false,
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                passes: 3,
+            },
+        },
+        cssCodeSplit: true,
+        sourcemap: false,
+        cssMinify: true,
         target: 'es2017'
     },
 })
