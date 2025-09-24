@@ -10,21 +10,26 @@ There is also support for css modules and image imports.
 All this, while still supporting dev, build, and serve commands for easy development.
 
 This template contains simple `counter` example under `/counter` path.
-Thanks to preact, overhead is really small, making total bundle size of this minimal example just 5.43kB.
+Thanks to preact, overhead is really small, making total bundle size of this minimal example just 6.22kB (can be 5.43 with brotli, but it is unsupported by some browsers).
 
 ### Usage
 Remember to add `Content-Encoding: br` to all your server responses.
 
 ```c
-#include <WiFi.h>
 #ifdef ESP32
     #include <WebServer.h>
+    #include <WiFi.h>
 #elif defined(ESP8266)
     #include <ESP8266WebServer.h>
+    #include <ESP8266WiFi.h>
 #endif
 #include "static_site.h"
 
-WebServer server(80);
+#ifdef ESP32
+  WebServer server(80)
+#elif defined(ESP8266)
+  ESP8266WebServer server(80);
+#endif
 
 const char *ssid = "YOUR SSID";
 const char *password = "YOUR PASSWORD";
@@ -44,27 +49,27 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   // Define the default entrypoints.
-  for (int i = 0; i < static_site::num_routes; i++) {
-    server.on(static_site::routes[i].path, [] {
-      server.sendHeader("Content-Encoding", "br");
+  for (const auto& route : static_site::routes) {
+    server.on(route.path, [route] {
+      server.sendHeader("Content-Encoding", "gzip");
       server.send_P(
         200, 
         "text/html", 
-        (const char *)static_site::routes[i].data, 
-        static_site::routes[i].size
+        (const char*) route.data, 
+        route.size
       );
     });
   }
 
   // Define js chunks and other junk.
-  for (int i = 0; i < static_site::num_resources; i++) {
-    server.on(static_site::resources[i].path, [i] {
-      server.sendHeader("Content-Encoding", "br");
+  for (const auto& resource : static_site::resources) {
+    server.on(resource.path, [resource] {
+      server.sendHeader("Content-Encoding", "gzip");
       server.send_P(
         200, 
-        static_site::resources[i].type, 
-        (const char *)static_site::resources[i].contents, 
-        static_site::resources[i].size
+        resource.mime, 
+        (const char*) resource.data, 
+        resource.size
       );
     });
   }

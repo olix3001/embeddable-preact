@@ -5,11 +5,11 @@ import type { SiteManifest } from './fs-router-plugin';
 import { glob } from 'glob';
 import { readFile } from 'fs/promises';
 import { minify as htmlMinify } from 'html-minifier-terser';
-import zlib, { brotliCompress, type BrotliOptions } from 'zlib';
+import zlib, { gzip, ZlibOptions, type BrotliOptions } from 'zlib';
 import mime from 'mime-types';
 import ejs from 'ejs';
 
-const asyncBrotliCompress = (data: any, options: BrotliOptions): Promise<Buffer> => new Promise((resolve, reject) => brotliCompress(data, options, (err, result) => {
+const asyncGzip = (data: any, options: ZlibOptions): Promise<Buffer> => new Promise((resolve, reject) => gzip(data, options, (err, result) => {
     if (err) reject(err)
     else resolve(result)
 }))
@@ -49,10 +49,8 @@ const viteGenerateCHeader = (): Plugin => {
                     data = Buffer.from(minifiedHtml);
                 }
 
-                const compressedData = await asyncBrotliCompress(data, {
-                    params: {
-                        [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
-                    },
+                const compressedData = await asyncGzip(data, {
+                    level: zlib.constants.Z_BEST_COMPRESSION
                 });
                 const compressedSize = compressedData.length;
 

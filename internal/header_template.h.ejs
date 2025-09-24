@@ -18,7 +18,7 @@ namespace static_site {
     // Data for every file.
     <% for(const file of files) { %>
     const uint32_t f_<%= file.normalizedName %>_size PROGMEM = <%= file.size %>;
-    const uint32_t f_<%= file.normalizedName %>_data PROGMEM = {<%= file.data %>
+    const uint8_t f_<%= file.normalizedName %>_data[] PROGMEM = {<%= file.data %>
     };
     <% } %>
 
