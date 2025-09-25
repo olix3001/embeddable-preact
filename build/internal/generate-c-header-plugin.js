@@ -72,7 +72,7 @@ const viteGenerateCHeader = ({ bundlePreact = false } = {}) => {
             });
             await Promise.all(filesToProcess);
             const totalBundleSize = humanFileSize(allFiles.reduce((acc, a) => acc + a.size, 0));
-            const header = await ejs.renderFile(join(__dirname, 'header_template.h.ejs'), {
+            const header = await ejs.renderFile(join(import.meta.dirname, 'header_template.h.ejs'), {
                 files: allFiles,
                 meta: {
                     totalSize: totalBundleSize,

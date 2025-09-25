@@ -94,7 +94,7 @@ const viteGenerateCHeader = ({ bundlePreact = false }: PluginOptions = {}): Plug
 
             const totalBundleSize = humanFileSize(allFiles.reduce((acc, a) => acc + a.size, 0))
             const header = await ejs.renderFile(
-                join(__dirname, 'header_template.h.ejs'),
+                join(import.meta.dirname, 'header_template.h.ejs'),
                 {
                     files: allFiles,
                     meta: {
