@@ -148,7 +148,7 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
             const pages = await findPageRoutes(join(config.root, options.pagesDir), options.pagesDir, []);
 
             const vite = await createServer({
-                configFile: join(import.meta.dirname, '../vite.ssr.config.ts'),
+                configFile: import.meta.filename.endsWith('js') ? join(import.meta.dirname, '../../vite.ssr.config.ts') : join(import.meta.dirname, '../vite.ssr.config.ts'),
                 plugins: cx.plugins
             });
 
