@@ -7,10 +7,11 @@
     "type": "git",
     "url": "https://github.com/olix3001/embeddable-preact-template.git"
   },
-  "main": "index",
+  "main": "build/index.js",
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
+    "build:lib": "tsc --outDir build",
     "serve": "vite preview"
   },
   "author": "Oliwier Michalik",
