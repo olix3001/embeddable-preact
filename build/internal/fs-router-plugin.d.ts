@@ -3,6 +3,7 @@ interface PluginOptions {
     pagesDir: string;
     bundlePreact?: boolean;
     prerender?: boolean;
+    htmlClassName?: string;
 }
 export interface SiteManifest {
     routes: Record<string, string>;

@@ -140,7 +140,7 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
                 try {
                     const routePath = routeName === 'index' ? '/' : `/${routeName}`;
                     const htmlContent = `<!DOCTYPE html>
-<html>
+<html class="${options.htmlClassName}">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
