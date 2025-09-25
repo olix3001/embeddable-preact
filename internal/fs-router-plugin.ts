@@ -6,13 +6,14 @@ import esbuild from 'esbuild';
 
 interface PluginOptions {
     pagesDir: string;
+    bundlePreact?: boolean;
 }
 
 export interface SiteManifest {
     routes: Record<string, string>;
 }
 
-const vitePluginRouter = (options: PluginOptions): Plugin => {
+const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): Plugin => {
     let config: ResolvedConfig;
     const virtualPrefix = 'virtual:route-';
 
@@ -31,6 +32,11 @@ const vitePluginRouter = (options: PluginOptions): Plugin => {
             }
 
             return {
+                resolve: {
+                    alias: (bundlePreact ? {} : {
+                        preact: 'https://esm.sh/preact',
+                    }) as any
+                },
                 build: {
                     rollupOptions: {
                         input: Object.fromEntries(pageMap),

@@ -8,7 +8,10 @@ import viteGenerateCHeader from './internal/generate-c-header-plugin';
 export default defineConfig({
     plugins: [
         preact(), 
-        vitePluginRouter({ pagesDir: 'src/pages' }), 
+        vitePluginRouter({ 
+            pagesDir: 'src/pages',
+            bundlePreact: false,
+        }), 
         vitePluginStaticPreview(),
         preview({
             debug: false,

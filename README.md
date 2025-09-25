@@ -11,6 +11,8 @@ All this, while still supporting dev, build, and serve commands for easy develop
 
 This template contains simple `counter` example under `/counter` path.
 Thanks to preact, overhead is really small, making total bundle size of this minimal example just 6.22kB (can be 5.43 with brotli, but it is unsupported by some browsers).
+By default `bundlePreact` option is disabled, aliasing preact to its CDN version, making total bundle size 1.19kB for the same example.
+This is preferred way of using this framework, but if you're making some kind of captive page, It might be necessary to provide everything locally.
 
 ### Usage
 Remember to add `Content-Encoding: br` to all your server responses.
