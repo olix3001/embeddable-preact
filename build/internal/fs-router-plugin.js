@@ -1,10 +1,10 @@
 import { normalizePath, createServer } from 'vite';
-import { readdir } from 'fs/promises';
+import { readdir, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { basename, dirname, join, relative } from 'path';
 import esbuild from 'esbuild';
 import { prerender as ssr } from 'preact-iso';
-import { exit } from 'process';
+import { pathToFileURL } from 'url';
 const PREACT_CDN = 'https://esm.sh/preact';
 const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options }) => {
     let config;
@@ -12,7 +12,7 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
     return {
         name: 'vite-plugin-router',
         enforce: 'pre',
-        async config(userConfig) {
+        async config(_, { isSsrBuild }) {
             const pages = await findPageRoutes(join(process.cwd(), options.pagesDir), options.pagesDir, []);
             const pageMap = new Map();
             for (const page of pages) {
@@ -20,7 +20,7 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
             }
             return {
                 resolve: {
-                    alias: (bundlePreact ? {} : {
+                    alias: ((!isSsrBuild && bundlePreact) ? {} : {
                         preact: PREACT_CDN,
                     })
                 },
@@ -38,16 +38,21 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
         },
         configResolved(resolvedConfig) {
             config = resolvedConfig;
-            if (prerender && !bundlePreact) {
-                console.error('At the moment it is not possible to enable prerendering without bundling preact.');
-                exit(1);
-            }
         },
         resolveId(id) {
             if (id.startsWith(virtualPrefix)) {
                 return `\0${id}`;
             }
             return null;
+        },
+        transform(code, id) {
+            if (id.endsWith('.tsx') || id.endsWith('.ts')) {
+                // We only remove the directive for client builds to avoid Rollup warnings.
+                // It remains in place for SSR builds.
+                const directiveRegex = /(['"]use strict['"]|['"]use static['"]|['"]use client['"]);\s*/g;
+                return code.replace(directiveRegex, '');
+            }
+            return code;
         },
         async load(id) {
             if (id.startsWith(`\0${virtualPrefix}`)) {
@@ -102,27 +107,25 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
             }
             return null;
         },
-        async generateBundle(_, bundle) {
+        async generateBundle(cx, bundle) {
             console.log('Generating static HTML files and route manifest...');
             const siteManifest = {
                 routes: {},
             };
             const pages = await findPageRoutes(join(config.root, options.pagesDir), options.pagesDir, []);
-            let vite;
-            if (prerender) {
-                vite = await createServer({
-                    server: { middlewareMode: true },
-                    optimizeDeps: { noDiscovery: true, include: [] },
-                    appType: 'custom',
-                });
-            }
+            const vite = await createServer({
+                configFile: join(import.meta.dirname, '../vite.ssr.config.ts'),
+                plugins: cx.plugins
+            });
             for (const route of pages) {
                 const routeName = route.routePath.substring(1) || 'index';
+                const currentPage = pages.find((p) => (p.routePath.substring(1) || 'index') === routeName)?.fullPath.replaceAll('\\', '/');
+                const fileSource = await readFile(currentPage, 'utf-8');
+                const isStatic = fileSource.startsWith('"use static"') || fileSource.startsWith("'use static'");
                 let prerenderResult = '';
-                if (prerender) {
-                    const currentPage = pages.find((p) => (p.routePath.substring(1) || 'index') === routeName)?.fullPath.replaceAll('\\', '/');
+                if (prerender || isStatic) {
                     try {
-                        const mod = await vite.ssrLoadModule('file:///' + currentPage);
+                        const mod = await vite.ssrLoadModule(pathToFileURL(currentPage).toString());
                         prerenderResult = (await ssr(mod.default, {})).html;
                     }
                     catch (err) {
@@ -137,6 +140,10 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
                 const allCssFiles = getAllCssFromManifest(bundle, entryFile.fileName, new Set());
                 const cssLinks = allCssFiles?.map((css) => `<link rel="stylesheet" href="/${css}">`).join('\n    ') || '';
                 const mainBundlePath = normalizePath(relative(config.root, entryFile.fileName));
+                if (isStatic) {
+                    // Remove this file's js from bundle.
+                    delete bundle[entryFile.fileName];
+                }
                 try {
                     const routePath = routeName === 'index' ? '/' : `/${routeName}`;
                     const htmlContent = `<!DOCTYPE html>
@@ -149,7 +156,7 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
   </head>
   <body>
     <div id="app">${prerenderResult}</div>
-    <script type="module" src="/${mainBundlePath}"></script>
+    ${isStatic ? '' : `<script type="module" src="/${mainBundlePath}"></script>`}
   </body>
 </html>`;
                     const outputHtmlName = routeName === 'index' ? 'route._index.html' : `route.${routeName}.html`;
@@ -165,9 +172,7 @@ const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options 
                     console.error(`Failed to process route ${routeName}:`, err);
                 }
             }
-            if (prerender) {
-                vite.close();
-            }
+            vite.close();
             this.emitFile({
                 type: 'asset',
                 fileName: 'site-manifest.json',
