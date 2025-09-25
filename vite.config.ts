@@ -36,6 +36,6 @@ export default defineConfig({
         cssCodeSplit: true,
         sourcemap: false,
         cssMinify: true,
-        target: 'es2017'
+        target: 'es6'
     },
 })
