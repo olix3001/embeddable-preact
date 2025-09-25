@@ -15,7 +15,7 @@ By default `bundlePreact` option is disabled, aliasing preact to its CDN version
 This is preferred way of using this framework, but if you're making some kind of captive page, It might be necessary to provide everything locally.
 
 ### Usage
-Remember to add `Content-Encoding: br` to all your server responses.
+Remember to add `Content-Encoding: gzip` to all your server responses.
 
 ```c
 #ifdef ESP32
