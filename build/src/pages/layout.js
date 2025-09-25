@@ -1,5 +1,8 @@
-import { Fragment as _Fragment, jsx as _jsx } from "preact/jsx-runtime";
-import '../global.css';
-export default function Layout({ children }) {
-    return _jsx(_Fragment, { children: children });
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Layout;
+const jsx_runtime_1 = require("preact/jsx-runtime");
+require("../global.css");
+function Layout({ children }) {
+    return (0, jsx_runtime_1.jsx)(jsx_runtime_1.Fragment, { children: children });
 }

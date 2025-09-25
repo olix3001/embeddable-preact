@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
-    "build:lib": "tsc --outDir build",
+    "build:lib": "tsc --build",
     "serve": "vite preview"
   },
   "author": "Oliwier Michalik",
