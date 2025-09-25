@@ -1,7 +1,7 @@
 import { Plugin, type ResolvedConfig } from 'vite';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import type { SiteManifest } from './fs-router-plugin';
+import type { SiteManifest } from './fs-router-plugin.ts';
 import { glob } from 'glob';
 import { readFile } from 'fs/promises';
 import { minify as htmlMinify } from 'html-minifier-terser';

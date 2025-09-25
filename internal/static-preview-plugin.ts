@@ -1,7 +1,7 @@
 import { Plugin, type ResolvedConfig } from 'vite';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import type { SiteManifest } from './fs-router-plugin';
+import type { SiteManifest } from './fs-router-plugin.ts';
 
 const vitePluginStaticPreview = (): Plugin => {
     let config: ResolvedConfig;

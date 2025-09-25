@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = require("fs");
-const path_1 = require("path");
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 const vitePluginStaticPreview = () => {
     let config;
     return {
@@ -13,8 +11,8 @@ const vitePluginStaticPreview = () => {
             return () => {
                 let manifest;
                 try {
-                    const manifestPath = (0, path_1.resolve)(config.build.outDir, 'site-manifest.json');
-                    manifest = JSON.parse((0, fs_1.readFileSync)(manifestPath, 'utf-8'));
+                    const manifestPath = resolve(config.build.outDir, 'site-manifest.json');
+                    manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
                 }
                 catch (e) {
                     console.error('Failed to load site-manifest.json. Is the project built?');
@@ -24,9 +22,9 @@ const vitePluginStaticPreview = () => {
                     const urlPath = req.originalUrl?.split('?')[0];
                     const htmlFile = manifest.routes[urlPath];
                     if (htmlFile) {
-                        const filePath = (0, path_1.resolve)(config.build.outDir, htmlFile);
+                        const filePath = resolve(config.build.outDir, htmlFile);
                         try {
-                            const htmlContent = (0, fs_1.readFileSync)(filePath, 'utf-8');
+                            const htmlContent = readFileSync(filePath, 'utf-8');
                             res.setHeader('Content-Type', 'text/html');
                             res.end(htmlContent);
                         }
@@ -44,4 +42,4 @@ const vitePluginStaticPreview = () => {
         },
     };
 };
-exports.default = vitePluginStaticPreview;
+export default vitePluginStaticPreview;
