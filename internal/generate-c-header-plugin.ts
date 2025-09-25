@@ -1,4 +1,4 @@
-import { Plugin } from 'vite';
+import { Plugin, type ResolvedConfig } from 'vite';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { SiteManifest } from './fs-router-plugin';
@@ -15,20 +15,26 @@ const asyncGzip = (data: any, options: ZlibOptions): Promise<Buffer> => new Prom
 }))
 
 const viteGenerateCHeader = (): Plugin => {
+    let config: ResolvedConfig;
+
     return {
         name: 'vite-generate-c-header',
         enforce: 'post',
 
+        configResolved(resolvedConfig) {
+            config = resolvedConfig;
+        },
+
         async closeBundle() {
             // Load manifest.
             const siteManifest: SiteManifest = JSON.parse(
-                readFileSync(join(__dirname, '../dist/site-manifest.json'), 'utf-8')
+                readFileSync(join(config.build.outDir, 'site-manifest.json'), 'utf-8')
             );
 
             // Compress and store all chunks.
             const allFiles: any[] = [];
 
-            const distDir = join(__dirname, '../dist');
+            const distDir = config.build.outDir;
             const files = await glob('**/*.{js,css,html}', {
                 cwd: distDir,
                 nodir: true,
