@@ -1,19 +1,24 @@
-import { Plugin, normalizePath, ResolvedConfig } from 'vite';
+import { Plugin, normalizePath, ResolvedConfig, createServer } from 'vite';
 import { readdir } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { basename, dirname, join, relative } from 'path';
 import esbuild from 'esbuild';
+import { prerender as ssr } from 'preact-iso';
+import { exit } from 'process';
 
 interface PluginOptions {
     pagesDir: string;
     bundlePreact?: boolean;
+    prerender?: boolean;
 }
 
 export interface SiteManifest {
     routes: Record<string, string>;
 }
 
-const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): Plugin => {
+const PREACT_CDN = 'https://esm.sh/preact';
+
+const vitePluginRouter = ({ bundlePreact = false, prerender = false, ...options }: PluginOptions): Plugin => {
     let config: ResolvedConfig;
     const virtualPrefix = 'virtual:route-';
 
@@ -34,7 +39,7 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
             return {
                 resolve: {
                     alias: (bundlePreact ? {} : {
-                        preact: 'https://esm.sh/preact',
+                        preact: PREACT_CDN,
                     }) as any
                 },
                 build: {
@@ -52,6 +57,10 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
 
         configResolved(resolvedConfig) {
             config = resolvedConfig;
+            if (prerender && !bundlePreact) {
+                console.error('At the moment it is not possible to enable prerendering without bundling preact.')
+                exit(1)
+            }
         },
 
         resolveId(id) {
@@ -79,8 +88,7 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
                 const layoutWrappers = layoutPaths.map((_, i) => `<Layout${i}>`).join('');
                 const layoutClosures = layoutPaths.map((_, i) => `</Layout${layoutPaths.length - 1 - i}>`).join('');
 
-                const code = `
-                import { render } from 'preact';
+                let code = `
                 import Page from '${currentPage.fullPath.replaceAll('\\', '/')}';
                 ${layoutImports}
 
@@ -91,9 +99,22 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
                     ${layoutClosures}
                     );
                 };
+                `;
 
-                render(<PageWrapper />, document.getElementById('app'));
-                `
+                if (prerender) {
+                    code += `
+                    import { hydrate } from 'preact-iso';
+                    if (typeof window !== 'undefined') {
+                        hydrate(<PageWrapper />, document.getElementById('app'));
+                    }
+                    `
+                }
+                else {
+                    code += `
+                    import { render } from 'preact';
+                    render(<PageWrapper />, document.getElementById('app'));
+                    `
+                }
 
                 try {
                     const result = await esbuild.transform(code, {
@@ -118,8 +139,30 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
             };
             const pages = await findPageRoutes(join(config.root, options.pagesDir), options.pagesDir, []);
 
+            let vite;
+            if (prerender) {
+                vite = await createServer({
+                    server: { middlewareMode: true },
+                    optimizeDeps: { noDiscovery: true, include: [] },
+                    appType: 'custom',
+                });
+            }
+
             for (const route of pages) {
                 const routeName = route.routePath.substring(1) || 'index';
+
+                let prerenderResult = '';
+                if (prerender) {
+                    const currentPage = pages.find(
+                        (p) => (p.routePath.substring(1) || 'index') === routeName
+                    )?.fullPath.replaceAll('\\', '/');
+                    try {
+                        const mod = await vite!.ssrLoadModule('file:///' + currentPage);
+                        prerenderResult = (await ssr(mod.default, {})).html;
+                    } catch (err) {
+                        console.error('Failed to import page: ', err);
+                    }
+                }
 
                 const entryFile = Object.values(bundle).find(
                     (asset) => asset.type === 'chunk' && asset.isEntry && asset.name === routeName
@@ -147,7 +190,7 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
     ${cssLinks}
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">${prerenderResult}</div>
     <script type="module" src="/${mainBundlePath}"></script>
   </body>
 </html>`;
@@ -164,6 +207,10 @@ const vitePluginRouter = ({ bundlePreact = false, ...options}: PluginOptions): P
                 } catch (err) {
                     console.error(`Failed to process route ${routeName}:`, err);
                 }
+            }
+
+            if (prerender) {
+                vite!.close();
             }
 
             this.emitFile({

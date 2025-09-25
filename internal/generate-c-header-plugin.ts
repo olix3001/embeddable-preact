@@ -9,12 +9,16 @@ import zlib, { gzip, ZlibOptions, type BrotliOptions } from 'zlib';
 import mime from 'mime-types';
 import ejs from 'ejs';
 
+interface PluginOptions {
+    bundlePreact?: boolean;
+}
+
 const asyncGzip = (data: any, options: ZlibOptions): Promise<Buffer> => new Promise((resolve, reject) => gzip(data, options, (err, result) => {
     if (err) reject(err)
     else resolve(result)
 }))
 
-const viteGenerateCHeader = (): Plugin => {
+const viteGenerateCHeader = ({ bundlePreact = false }: PluginOptions = {}): Plugin => {
     let config: ResolvedConfig;
 
     return {

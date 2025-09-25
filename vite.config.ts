@@ -10,7 +10,6 @@ export default defineConfig({
         preact(), 
         vitePluginRouter({ 
             pagesDir: 'src/pages',
-            bundlePreact: false,
         }), 
         vitePluginStaticPreview(),
         preview({
